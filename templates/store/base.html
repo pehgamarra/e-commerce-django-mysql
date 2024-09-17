@@ -16,6 +16,13 @@
                 <li><a href="{% url 'home' %}">Home</a></li>
                 <li><a href="{% url 'product_list' %}">Products</a></li>
                 <li><a href="#">Contact</a></li>
+                {% if user.is_authenticated %}
+                <li>Logged in as {{ user.username }}</li>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+                {% else %}
+                <li><a href="{% url 'login' %}">Login</a></li>
+                <li><a href="{% url 'register' %}">Register</a></li>
+                {% endif %}
                 <li><a href="{% url 'admin:index' %}">Admin</a></li>
             </ul>
         </nav>
