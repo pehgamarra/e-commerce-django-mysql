@@ -156,3 +156,77 @@ footer p {
     background-color: #2980b9;
     transform: translateY(-2px);
 }
+
+@media (max-width: 768px) {
+    .product-item {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+.search-form {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.search-form input[type="text"] {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px 0 0 5px; 
+    font-size: 16px;
+}
+
+.search-form button {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-radius: 0 5px 5px 0; 
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.search-form button:hover {
+    background-color: #2980b9;
+}
+
+.filter {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.filter select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #fff;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.filter select:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.price {
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.see-price {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.see-price:hover {
+    text-decoration: underline;
+    color: #2980b9;
+}

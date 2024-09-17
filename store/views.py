@@ -1,14 +1,15 @@
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import Product, Cart, CartItem
+from .models import Category, Product, Cart, CartItem
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 
 
 def home_view(request):
     return render(request, 'store/home.html')
 
+#REGISTER / LOGOUT
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -20,13 +21,41 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'store/register.html', {'form': form})
 
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('home')
+
+
+#PRODUCTS
+
 def product_list(request):
     products = Product.objects.all()
-    return render(request, 'store/product_list.html', {'products': products})
+    categories = Category.objects.all()
+
+    category = request.GET.get('category')
+    if category:
+        products = products.filter(category__id=category)
+
+    query = request.GET.get('q')
+    if query:
+        products = products.filter(name__icontains=query)
+
+    context = {
+        'products': products,
+        'categories': categories,
+        'user_is_authenticated': request.user.is_authenticated,
+    }
+    return render(request, 'store/product_list.html', context)
+
 
 def product_detail(request, id):
     product = get_object_or_404(Product, id=id)
-    return render(request, 'store/product_detail.html', {'product': product})
+    context = {
+        'product': product,
+        'user_is_authenticated': request.user.is_authenticated,
+    }
+    return render(request, 'store/product_detail.html', context)
 
 @login_required
 def add_to_cart(request, product_id):
