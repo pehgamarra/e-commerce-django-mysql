@@ -1,9 +1,11 @@
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import Category, Product, Cart, CartItem
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
+from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from .forms import ShippingAddressForm
+from .models import Category, Product
+
 
 
 def home_view(request):
@@ -33,6 +35,7 @@ def product_list(request):
     products = Product.objects.all()
     categories = Category.objects.all()
 
+
     category = request.GET.get('category')
     if category:
         products = products.filter(category__id=category)
@@ -44,7 +47,6 @@ def product_list(request):
     context = {
         'products': products,
         'categories': categories,
-        'user_is_authenticated': request.user.is_authenticated,
     }
     return render(request, 'store/product_list.html', context)
 
@@ -57,20 +59,128 @@ def product_detail(request, id):
     }
     return render(request, 'store/product_detail.html', context)
 
-@login_required
+
+#Cart view
 def add_to_cart(request, product_id):
-    product = Product.objects.get(id=product_id)
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart = request.session.get('cart', {})
+    product = get_object_or_404(Product, id=product_id)
+    quantity = int(request.POST.get('quantity', 1))
+
+    if str(product_id) not in cart:
+        cart[product_id] = {
+            'quantity': quantity,
+            'price': str(product.price),
+        }
+    else:
+        cart[product_id]['quantity'] += quantity
+
+    request.session['cart'] = cart
+    return redirect('cart_detail')
+
+def remove_from_cart(request, product_id):
+    cart = request.session.get('cart', {})
+
+    if str(product_id) in cart:
+        del cart[product_id]
+
+    request.session['cart'] = cart
+    return redirect('cart_detail')
+
+def cart_detail(request):
+    cart = request.session.get('cart', {})
     
-    item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    if not created:
-        item.quantity += 1
-    item.save()
+    if not cart:
+        return render(request, 'store/cart_detail.html', {'message': 'Your cart is empty.'})
 
-    return redirect('product_list')
+    cart_items = []
+    total = 0
+    
+    for product_id, item in cart.items():
+        product = get_object_or_404(Product, id=product_id)
+        total_price = float(item['price']) * item['quantity']
+        cart_items.append({
+            'product': product,
+            'quantity': item['quantity'],
+            'total_price': total_price
+        })
+        total += total_price
 
-@login_required
-def view_cart(request):
-    cart = Cart.objects.get(user=request.user)
-    items = CartItem.objects.filter(cart=cart)
-    return render(request, 'store/cart.html', {'items': items})
+    context = {
+        'cart_items': cart_items,
+        'cart_total': round(total, 2) 
+    }
+    
+    return render(request, 'store/cart_detail.html', context)
+
+
+#checkout & shipping
+def calculate_shipping(total_amount):
+    shipping_rate = 0.05
+    return total_amount * shipping_rate
+
+def checkout(request):
+    cart = request.session.get('cart', {})
+    
+    if not cart:
+        return render(request, 'store/checkout.html', {'message': 'Your cart is empty.'})
+
+    if request.method == 'POST':
+        form = ShippingAddressForm(request.POST)
+        if form.is_valid():
+            address = form.cleaned_data
+            return render(request, 'store/checkout_complete.html', {'address': address})
+    else:
+        form = ShippingAddressForm()
+    
+    total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
+    shipping_cost = calculate_shipping(total_price)
+    shipping_cost = round(shipping_cost, 2)
+    grand_total = round(total_price + shipping_cost, 2)
+    
+    context = {
+        'cart': cart,
+        'total_price': round(total_price, 2),
+        'shipping_cost': shipping_cost,
+        'grand_total': grand_total,
+        'form': form
+    }
+    
+    return render(request, 'store/checkout.html', context)
+
+#remove & edit cart:
+
+@require_POST
+def remove_from_cart(request, product_id):
+    cart = request.session.get('cart', {})
+
+    if str(product_id) in cart:
+        del cart[str(product_id)]
+
+    request.session['cart'] = cart
+    return redirect('cart_detail')
+
+@require_POST
+def remove_all_from_cart(request, product_id):
+    cart = request.session.get('cart', {})
+
+    if str(product_id) in cart:
+        del cart[str(product_id)]
+
+    request.session['cart'] = cart
+    return redirect('cart_detail')
+
+@require_POST
+def update_cart_item(request, product_id):
+    cart = request.session.get('cart', {})
+    quantity = int(request.POST.get('quantity', 1))
+    
+    if str(product_id) in cart:
+        if quantity > 0:
+            cart[str(product_id)]['quantity'] = quantity
+        else:
+            del cart[str(product_id)]
+    else:
+        return redirect('cart_detail')
+
+    request.session['cart'] = cart
+    return redirect('cart_detail')

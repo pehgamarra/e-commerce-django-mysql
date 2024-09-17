@@ -215,18 +215,27 @@ footer p {
     outline: none;
 }
 
-.price {
-    font-weight: bold;
-    margin: 5px 0;
+/*"Add to Cart"*/
+.add-to-cart-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.see-price {
-    color: #3498db;
-    text-decoration: none;
-    font-weight: bold;
+.add-to-cart-btn:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
 }
-
-.see-price:hover {
-    text-decoration: underline;
-    color: #2980b9;
+.quantity-input {
+    width: 50px;
+    padding: 5px;
+    font-size: 14px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
 }

@@ -1,0 +1,21 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+    <h2>Checkout</h2>
+    
+    {% if message %}
+        <p>{{ message }}</p>
+    {% else %}
+        <p>Total Price: ${{ total_price }}</p>
+        <p>Shipping Cost: ${{ shipping_cost }}</p>
+        <p>Grand Total: ${{ grand_total }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Proceed with Purchase</button>
+        </form>
+    {% endif %}
+{% endblock %}
