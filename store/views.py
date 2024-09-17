@@ -3,9 +3,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .forms import ShippingAddressForm
-from .models import Category, Product
-
+from .forms import ShippingAddressForm, PaymentForm
+from .models import Category, Product, Order
 
 
 def home_view(request):
@@ -66,13 +65,15 @@ def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     quantity = int(request.POST.get('quantity', 1))
 
-    if str(product_id) not in cart:
-        cart[product_id] = {
-            'quantity': quantity,
+    product_id_str = str(product_id)
+
+    if product_id_str not in cart:
+        cart[product_id_str] = {
+            'quantity': quantity, 
             'price': str(product.price),
         }
     else:
-        cart[product_id]['quantity'] += quantity
+        cart[product_id_str]['quantity'] += quantity
 
     request.session['cart'] = cart
     return redirect('cart_detail')
@@ -101,13 +102,13 @@ def cart_detail(request):
         cart_items.append({
             'product': product,
             'quantity': item['quantity'],
-            'total_price': total_price
+            'total_price': round(total_price, 2)
         })
         total += total_price
 
     context = {
         'cart_items': cart_items,
-        'cart_total': round(total, 2) 
+        'cart_total': round(total, 2),
     }
     
     return render(request, 'store/cart_detail.html', context)
@@ -118,46 +119,66 @@ def calculate_shipping(total_amount):
     shipping_rate = 0.05
     return total_amount * shipping_rate
 
+
 def checkout(request):
     cart = request.session.get('cart', {})
-    
+
     if not cart:
         return render(request, 'store/checkout.html', {'message': 'Your cart is empty.'})
 
     if request.method == 'POST':
         form = ShippingAddressForm(request.POST)
-        if form.is_valid():
+        payment_form = PaymentForm(request.POST)  # Adicione o formulário de pagamento
+
+        if form.is_valid() and payment_form.is_valid():  # Verifique ambos os formulários
             address = form.cleaned_data
-            return render(request, 'store/checkout_complete.html', {'address': address})
+            card_number = payment_form.cleaned_data['card_number']
+            expiry_date = payment_form.cleaned_data['card_expiry']
+            cvv = payment_form.cleaned_data['card_cvc']
+
+            # Criação de uma instância de pedido (Order) e salvamento no banco de dados
+            total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
+            shipping_cost = calculate_shipping(total_price)
+            grand_total = total_price + shipping_cost
+
+            order = Order(
+                total_price=round(total_price, 2),
+                shipping_cost=round(shipping_cost, 2),
+                grand_total=round(grand_total, 2),
+                address=f"{address['first_name']} {address['last_name']}, {address['address_line1']}, {address['address_line2']}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}, Phone: {address['phone_number']}"
+            )
+            order.save()
+
+            return render(request, 'store/checkout_complete.html', {
+                'order': order,
+                'card_number': card_number,
+                'expiry_date': expiry_date,
+                'cvv': cvv
+            })
+
     else:
         form = ShippingAddressForm()
-    
+        payment_form = PaymentForm()  # Inicialize o formulário de pagamento
+
     total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
     shipping_cost = calculate_shipping(total_price)
-    shipping_cost = round(shipping_cost, 2)
     grand_total = round(total_price + shipping_cost, 2)
-    
+
     context = {
         'cart': cart,
         'total_price': round(total_price, 2),
-        'shipping_cost': shipping_cost,
+        'shipping_cost': round(shipping_cost, 2),
         'grand_total': grand_total,
-        'form': form
+        'form': form,
+        'payment_form': payment_form  # Passe o formulário de pagamento para o template
     }
-    
-    return render(request, 'store/checkout.html', context)
+
+    return render(request, 'store/checkout_complete.html', context)
+
+def checkout_complete(request):
+    return render(request, 'store/checkout_complete.html')
 
 #remove & edit cart:
-
-@require_POST
-def remove_from_cart(request, product_id):
-    cart = request.session.get('cart', {})
-
-    if str(product_id) in cart:
-        del cart[str(product_id)]
-
-    request.session['cart'] = cart
-    return redirect('cart_detail')
 
 @require_POST
 def remove_all_from_cart(request, product_id):

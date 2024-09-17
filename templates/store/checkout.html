@@ -12,10 +12,28 @@
         <p>Shipping Cost: ${{ shipping_cost }}</p>
         <p>Grand Total: ${{ grand_total }}</p>
 
-        <form method="post">
-            {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Shipping Address</legend>
             {{ form.as_p }}
-            <button type="submit">Proceed with Purchase</button>
-        </form>
+        </fieldset>
+        <fieldset>
+            <legend>Payment Information</legend>
+            <div class="form-group">
+                <label for="card_number">Card Number:</label>
+                <input type="text" id="card_number" name="card_number" required>
+            </div>
+            <div class="form-group">
+                <label for="expiry_date">Expiry Date (MM/YY):</label>
+                <input type="text" id="expiry_date" name="expiry_date" required>
+            </div>
+            <div class="form-group">
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" required>
+            </div>
+        </fieldset>
+        <button type="submit">Proceed with Purchase</button>
+    </form>
     {% endif %}
 {% endblock %}
