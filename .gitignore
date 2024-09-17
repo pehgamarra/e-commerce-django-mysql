@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+build/
+dist/
+*.log
+*.cache
+*.tmp
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
