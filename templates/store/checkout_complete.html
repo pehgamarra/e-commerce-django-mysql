@@ -4,10 +4,12 @@
 
 {% block content %}
     <h2>Order Complete</h2>
-    <p>Thank you for your purchase!</p>
-    <p>Your order number is {{ order.id }}.</p>
-    <p>Total Price: ${{ order.total_price }}</p>
-    <p>Shipping Cost: ${{ order.shipping_cost }}</p>
-    <p>Grand Total: ${{ order.grand_total }}</p>
-    <p>Shipping Address: {{ order.address }}</p>
+    <div class="alert alert-success" role="alert">
+        <p>Thank you for your purchase!</p>
+        <p>Your order number is {{ order.id }}.</p>
+        <p>Total Price: ${{ order.total_price }}</p>
+        <p>Shipping Cost: ${{ order.shipping_cost }}</p>
+        <p>Grand Total: ${{ order.grand_total }}</p>
+        <p>Shipping Address: {{ order.address }}</p>
+    </div>
 {% endblock %}

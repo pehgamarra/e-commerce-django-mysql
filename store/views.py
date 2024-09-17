@@ -120,6 +120,7 @@ def calculate_shipping(total_amount):
     return total_amount * shipping_rate
 
 
+@login_required
 def checkout(request):
     cart = request.session.get('cart', {})
     
@@ -140,10 +141,12 @@ def checkout(request):
             grand_total = round(total_price + shipping_cost, 2)
 
             order = Order.objects.create(
+                user=request.user,
                 total_price=round(total_price, 2),
                 shipping_cost=shipping_cost,
                 grand_total=grand_total,
-                address=f"{address['address_line1']}, {address.get('address_line2', '')}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}"
+                address=f"{address['address_line1']}, {address.get('address_line2', '')}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}",
+                
             )
 
             request.session['cart'] = {}
@@ -171,7 +174,6 @@ def checkout(request):
     }
     
     return render(request, 'store/checkout.html', context)
-
 
 def checkout_complete(request):
     return render(request, 'store/checkout_complete.html')

@@ -145,4 +145,4 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = '/'
 
 #site
-SITE_ID = 1
+SITE_ID = 5

@@ -31,6 +31,7 @@ class CartItem(models.Model):
         return f'{self.quantity} x {self.product.name}'
 
 class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1) 
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

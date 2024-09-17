@@ -3,49 +3,61 @@
 {% block title %}Your Cart{% endblock %}
 
 {% block content %}
-    <h2>Your Cart</h2>
+    <div class="container mt-4">
+        <h2 class="mb-4">Your Cart</h2>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-                <th>Remove</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-                <tr>
-                    <td>
-                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width: 50px; height: 50px;">
-                        {{ item.product.name }}
-                    </td>
-                    <td>${{ item.product.price }}</td>
-                    <td>
-                        <form method="post" action="{% url 'update_cart_item' item.product.id %}">
-                            {% csrf_token %}
-                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
-                            <button type="submit">Update</button>
-                        </form>
-                    </td>
-                    <td>${{ item.total_price }}</td>
-                    <td>
-                        <form method="post" action="{% url 'remove_all_from_cart' item.product.id %}">
-                            {% csrf_token %}
-                            <button type="submit">Remove All</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="cart-table-wrapper">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-thumbnail me-2" style="width: 60px; height: 60px;">
+                                    <span>{{ item.product.name }}</span>
+                                </div>
+                            </td>
+                            <td>${{ item.product.price }}</td>
+                            <td>
+                                <form method="post" action="{% url 'update_cart_item' item.product.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <div class="input-group">
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control" style="max-width: 80px;">
+                                        <button type="submit" class="btn btn-primary">Update</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>${{ item.total_price }}</td>
+                            <td>
+                                <form method="post" action="{% url 'remove_all_from_cart' item.product.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Remove All</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <p><strong>Total:</strong> ${{ cart_total }}</p>
-    {% if user.is_authenticated %}
-        <a href="{% url 'checkout' %}">Proceed to Checkout</a>
-    {% else %}
-        <p>You need to be logged in to proceed to checkout.</p>
-    {% endif %}
+        <div class="d-flex justify-content-between mt-4">
+            <p><strong>Total:</strong> ${{ cart_total }}</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'checkout' %}" class="btn btn-success">
+                <i class="bi bi-cart"></i> Buy now 
+            </a>
+            {% else %}
+                <p>You need to be logged in to proceed to checkout.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

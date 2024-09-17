@@ -6,34 +6,35 @@
     <h2>Checkout</h2>
     
     {% if message %}
-        <p>{{ message }}</p>
+        <p class="alert alert-warning">{{ message }}</p>
     {% else %}
         <p>Total Price: ${{ total_price }}</p>
         <p>Shipping Cost: ${{ shipping_cost }}</p>
         <p>Grand Total: ${{ grand_total }}</p>
 
-    <form method="post">
-        {% csrf_token %}
-        <fieldset>
-            <legend>Shipping Address</legend>
-            {{ form.as_p }}
-        </fieldset>
-        <fieldset>
-            <legend>Payment Information</legend>
-            <div class="form-group">
-                <label for="card_number">Card Number:</label>
-                <input type="text" id="card_number" name="card_number" required>
-            </div>
-            <div class="form-group">
-                <label for="expiry_date">Expiry Date (MM/YY):</label>
-                <input type="text" id="expiry_date" name="expiry_date" required>
-            </div>
-            <div class="form-group">
-                <label for="cvv">CVV:</label>
-                <input type="text" id="cvv" name="cvv" required>
-            </div>
-        </fieldset>
-        <button type="submit">Proceed with Purchase</button>
-    </form>
+        <form method="post">
+            {% csrf_token %}
+            <fieldset class="border p-4 mb-4">
+                <legend class="w-auto">Shipping Address</legend>
+                {{ form.as_p }}
+            </fieldset>
+            <fieldset class="border p-4 mb-4">
+                <legend class="w-auto">Payment Information</legend>
+                <div class="form-group">
+                    <label for="card_number">Card Number:</label>
+                    <input type="text" id="card_number" name="card_number" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="expiry_date">Expiry Date (MM/YY):</label>
+                    <input type="text" id="expiry_date" name="expiry_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="cvv">CVV:</label>
+                    <input type="text" id="cvv" name="cvv" class="form-control" required>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="btn btn-primary">Proceed with Purchase</button>
+        </form>
     {% endif %}
 {% endblock %}

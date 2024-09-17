@@ -1,12 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-  <h2>Your Cart</h2>
-  <ul>
-    {% for item in items %}
-      <li>
-        {{ item.quantity }} x {{ item.product.name }} - ${{ item.product.price }}
-      </li>
-    {% endfor %}
-  </ul>
-  <p>Total: ${{ items|length }}</p>
+<div class="container mt-4">
+    <h2 class="mb-4">Your Cart</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Quantity</th>
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.product.name }}</td>
+                    <td>${{ item.product.price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-4 d-flex justify-content-end">
+        <h4>Total: ${{ total }}</h4>
+    </div>
+</div>
 {% endblock %}
