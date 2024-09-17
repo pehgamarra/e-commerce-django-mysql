@@ -122,58 +122,56 @@ def calculate_shipping(total_amount):
 
 def checkout(request):
     cart = request.session.get('cart', {})
-
+    
     if not cart:
         return render(request, 'store/checkout.html', {'message': 'Your cart is empty.'})
 
     if request.method == 'POST':
         form = ShippingAddressForm(request.POST)
-        payment_form = PaymentForm(request.POST)  # Adicione o formulário de pagamento
-
-        if form.is_valid() and payment_form.is_valid():  # Verifique ambos os formulários
+        card_number = request.POST.get('card_number')
+        expiry_date = request.POST.get('expiry_date')
+        cvv = request.POST.get('cvv')
+        
+        if form.is_valid():
             address = form.cleaned_data
-            card_number = payment_form.cleaned_data['card_number']
-            expiry_date = payment_form.cleaned_data['card_expiry']
-            cvv = payment_form.cleaned_data['card_cvc']
 
-            # Criação de uma instância de pedido (Order) e salvamento no banco de dados
             total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
             shipping_cost = calculate_shipping(total_price)
-            grand_total = total_price + shipping_cost
+            grand_total = round(total_price + shipping_cost, 2)
 
-            order = Order(
+            order = Order.objects.create(
                 total_price=round(total_price, 2),
-                shipping_cost=round(shipping_cost, 2),
-                grand_total=round(grand_total, 2),
-                address=f"{address['first_name']} {address['last_name']}, {address['address_line1']}, {address['address_line2']}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}, Phone: {address['phone_number']}"
+                shipping_cost=shipping_cost,
+                grand_total=grand_total,
+                address=f"{address['address_line1']}, {address.get('address_line2', '')}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}"
             )
-            order.save()
+
+            request.session['cart'] = {}
 
             return render(request, 'store/checkout_complete.html', {
                 'order': order,
+                'address': address,
                 'card_number': card_number,
                 'expiry_date': expiry_date,
                 'cvv': cvv
             })
-
     else:
         form = ShippingAddressForm()
-        payment_form = PaymentForm()  # Inicialize o formulário de pagamento
-
+    
     total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
-    shipping_cost = calculate_shipping(total_price)
+    shipping_cost = round(calculate_shipping(total_price), 2)
     grand_total = round(total_price + shipping_cost, 2)
-
+    
     context = {
         'cart': cart,
         'total_price': round(total_price, 2),
-        'shipping_cost': round(shipping_cost, 2),
+        'shipping_cost': shipping_cost,
         'grand_total': grand_total,
-        'form': form,
-        'payment_form': payment_form  # Passe o formulário de pagamento para o template
+        'form': form
     }
+    
+    return render(request, 'store/checkout.html', context)
 
-    return render(request, 'store/checkout_complete.html', context)
 
 def checkout_complete(request):
     return render(request, 'store/checkout_complete.html')
