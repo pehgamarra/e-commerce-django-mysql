@@ -216,10 +216,18 @@ def admin_order_list(request):
 
 @staff_member_required
 def admin_dashboard(request):
+    status_filter = request.GET.get('status')
+    orders = Order.objects.all()
+
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
     total_orders = Order.objects.count()
     pending_orders = Order.objects.filter(status='pending').count()
     shipped_orders = Order.objects.filter(status='shipped').count()
     delivered_orders = Order.objects.filter(status='delivered').count()
+    user = Order.objects.filter(status='user').count()
+    address = Order.objects.filter(status='address').count()
 
     total_products = Product.objects.count()
     out_of_stock_products = Product.objects.filter(stock=0).count()
@@ -231,9 +239,14 @@ def admin_dashboard(request):
         'delivered_orders': delivered_orders,
         'total_products': total_products,
         'out_of_stock_products': out_of_stock_products,
+        'orders': orders,
+        'status_filter': status_filter,
+        'user' : user,
+        'address': address,
     }
 
     return render(request, 'store/admin_dashboard.html', context)
+
 
 @staff_member_required
 def order_list(request):

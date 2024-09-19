@@ -1,37 +1,41 @@
 {% extends 'store/base.html' %}
 
 {% block content %}
-<h1>Order List</h1>
+<div id="order-list">
+    <h1>Order List</h1>
 
-<form method="get" action="{% url 'orders' %}">
-    <select name="status">
-        <option value="">All</option>
-        <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Pending</option>
-        <option value="shipped" {% if status_filter == "shipped" %}selected{% endif %}>Shipped</option>
-        <option value="delivered" {% if status_filter == "delivered" %}selected{% endif %}>Delivered</option>
-    </select>
-    <button type="submit">Filter</button>
-</form>
+    <form method="get">
+        <select name="status" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Pending</option>
+            <option value="shipped" {% if status_filter == "shipped" %}selected{% endif %}>Shipped</option>
+            <option value="delivered" {% if status_filter == "delivered" %}selected{% endif %}>Delivered</option>
+        </select>
+    </form>
 
-
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Total Price</th>
-        <th>Status</th>
-    </tr>
-    {% for order in orders %}
-    <tr>
-        <td>{{ order.id }}</td>
-        <td>{{ order.total_price }}</td>
-        <td>{{ order.get_status_display }}</td>
-    </tr>
-    {% empty %}
+    <table>
         <tr>
-            <td colspan="3">No orders found.</td>
+            <th>ID</th>
+            <th>Total Price</th>
+            <th>Username</th>
+            <th>Ship address</th>
+            <th>Status</th>
         </tr>
-    {% endfor %}
-</table>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.total_price }}</td>
+            <td>{{ order.user }}</td>            
+            <td>{{ order.address }}</td>
+            <td>{{ order.get_status_display }}</td>
+        </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">No orders found.</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
 
 
 {% endblock %}
