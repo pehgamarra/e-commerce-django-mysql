@@ -4,8 +4,12 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+import matplotlib
 from .forms import ShippingAddressForm
 from .models import Category, Product, Order
+import matplotlib.pyplot as plt
+import io
+import base64
 
 
 def home_view(request):
@@ -216,49 +220,55 @@ def admin_order_list(request):
 
 @staff_member_required
 def admin_dashboard(request):
+    matplotlib.use('Agg')
     status_filter = request.GET.get('status')
     orders = Order.objects.all()
 
     if status_filter:
         orders = orders.filter(status=status_filter)
 
-    total_orders = Order.objects.count()
-    pending_orders = Order.objects.filter(status='pending').count()
-    shipped_orders = Order.objects.filter(status='shipped').count()
-    delivered_orders = Order.objects.filter(status='delivered').count()
-    user = Order.objects.filter(status='user').count()
-    address = Order.objects.filter(status='address').count()
+        total_orders = Order.objects.count()
+        pending_orders = Order.objects.filter(status='pending').count()
+        shipped_orders = Order.objects.filter(status='shipped').count()
+        delivered_orders = Order.objects.filter(status='delivered').count()
 
-    total_products = Product.objects.count()
-    out_of_stock_products = Product.objects.filter(stock=0).count()
+        total_products = Product.objects.count()
+        out_of_stock_products = Product.objects.filter(stock=0).count()
 
-    context = {
-        'total_orders': total_orders,
-        'pending_orders': pending_orders,
-        'shipped_orders': shipped_orders,
-        'delivered_orders': delivered_orders,
-        'total_products': total_products,
-        'out_of_stock_products': out_of_stock_products,
-        'orders': orders,
-        'status_filter': status_filter,
-        'user' : user,
-        'address': address,
-    }
+        orders = Order.objects.all()
+        total_sales = {}
+        
+        for order in orders:
+            month = order.created_at.month  
+            total_sales[month] = total_sales.get(month, 0) + order.grand_total
 
+        plt.figure(figsize=(10, 5))
+        plt.plot(total_sales.keys(), total_sales.values(), marker='o')
+        plt.title('Total Sales / Month')
+        plt.xlabel('Months')
+        plt.ylabel('Total Sales')
+        plt.xticks(list(total_sales.keys())) 
+        plt.grid()
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        image_png = buffer.getvalue()
+        buffer.close()
+        graphic = base64.b64encode(image_png)
+        graphic = graphic.decode('utf-8') 
+
+        context = {
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'shipped_orders': shipped_orders,
+            'delivered_orders': delivered_orders,
+            'total_products': total_products,
+            'out_of_stock_products': out_of_stock_products,
+            'orders': orders,
+            'status_filter': status_filter,
+            'graphic': graphic,
+        }
+        
     return render(request, 'store/admin_dashboard.html', context)
 
-
-@staff_member_required
-def order_list(request):
-    status_filter = request.GET.get('status')
-    print(f"Status Filter: {status_filter}")
-    orders = Order.objects.all()
-
-    if status_filter:
-        orders = orders.filter(status=status_filter)
-
-    context = {
-        'orders': orders,
-        'status_filter': status_filter,
-    }
-    return render(request, 'store/orders.html', context)
