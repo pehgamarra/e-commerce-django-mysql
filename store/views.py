@@ -3,7 +3,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .forms import ShippingAddressForm, PaymentForm
+from django.contrib.admin.views.decorators import staff_member_required
+from .forms import ShippingAddressForm
 from .models import Category, Product, Order
 
 
@@ -205,3 +206,46 @@ def update_cart_item(request, product_id):
 
     request.session['cart'] = cart
     return redirect('cart_detail')
+
+#staff methods
+
+@staff_member_required
+def admin_order_list(request):
+    orders = Order.objects.all()
+    return render(request, 'admin_custom/orders.html', {'orders': orders})
+
+@staff_member_required
+def admin_dashboard(request):
+    total_orders = Order.objects.count()
+    pending_orders = Order.objects.filter(status='pending').count()
+    shipped_orders = Order.objects.filter(status='shipped').count()
+    delivered_orders = Order.objects.filter(status='delivered').count()
+
+    total_products = Product.objects.count()
+    out_of_stock_products = Product.objects.filter(stock=0).count()
+
+    context = {
+        'total_orders': total_orders,
+        'pending_orders': pending_orders,
+        'shipped_orders': shipped_orders,
+        'delivered_orders': delivered_orders,
+        'total_products': total_products,
+        'out_of_stock_products': out_of_stock_products,
+    }
+
+    return render(request, 'store/admin_dashboard.html', context)
+
+@staff_member_required
+def order_list(request):
+    status_filter = request.GET.get('status')
+    print(f"Status Filter: {status_filter}")
+    orders = Order.objects.all()
+
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    context = {
+        'orders': orders,
+        'status_filter': status_filter,
+    }
+    return render(request, 'store/orders.html', context)
