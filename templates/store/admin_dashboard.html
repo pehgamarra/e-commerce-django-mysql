@@ -1,17 +1,44 @@
 {% extends 'store/base.html' %}
 
 {% block content %}
-<div id="order-list">
-    <h1>Order List</h1>
+{% load extras %}
 
-    <form method="get">
-        <select name="status" onchange="this.form.submit()">
-            <option value="">All</option>
-            <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Pending</option>
-            <option value="shipped" {% if status_filter == "shipped" %}selected{% endif %}>Shipped</option>
-            <option value="delivered" {% if status_filter == "delivered" %}selected{% endif %}>Delivered</option>
-        </select>
+<div id="order-list">
+    <h1>Orders</h1>
+
+    
+    <h2>Sales Report</h2>
+
+    <form method="get" action="{% url 'admin_dashboard' %}">
+        <div class="form-group">
+            <label for="month">Select Month:</label>
+            <select name="month" id="month" class="form-control">
+                <option value="">All Months</option>
+                {% for i in 12|range %}
+                    <option value="{{ i }}">{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="year">Select Year:</label>
+            <select name="year" id="year" class="form-control">
+                {% for y in years %}
+                    <option value="{{ y }}">{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Report</button>
     </form>
+    {% if not month and graphic %}
+        <h2>Sales Report</h2>
+        <img src="data:image/png;base64,{{ graphic }}" alt="Sales Report" />
+    {% endif %}
+    {% if month %}
+        </br><a href="{% url 'download_report' %}?month={{ month }}&year={{ year }}" class="btn btn-success">Download Monthly Report as XLSX</a>
+    {% else %}
+        </br><a href="{% url 'download_report' %}?year={{ year }}" class="btn btn-success">Download Annual Report as XLSX</a>
+    {% endif %}
+
 
     <table>
         <tr>
@@ -19,6 +46,7 @@
             <th>Total Price</th>
             <th>Username</th>
             <th>Ship address</th>
+            <th>Purchase date</th>
             <th>Status</th>
         </tr>
         {% for order in orders %}
@@ -27,6 +55,7 @@
             <td>{{ order.total_price }}</td>
             <td>{{ order.user }}</td>            
             <td>{{ order.address }}</td>
+            <td>{{ order.created_at }}</td>
             <td>{{ order.get_status_display }}</td>
         </tr>
         {% empty %}
@@ -36,8 +65,4 @@
         {% endfor %}
     </table>
 </div>
-
-<h2>Sales Report</h2>
-<img src="data:image/png;base64,{{ graphic }}" alt="Sales Report">
-
 {% endblock %}

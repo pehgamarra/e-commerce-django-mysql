@@ -1,15 +1,20 @@
+
+from datetime import datetime
+import matplotlib
+import openpyxl
+import matplotlib.pyplot as plt
+import io
+import base64
+import calendar
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-import matplotlib
 from .forms import ShippingAddressForm
 from .models import Category, Product, Order
-import matplotlib.pyplot as plt
-import io
-import base64
 
 
 def home_view(request):
@@ -221,54 +226,128 @@ def admin_order_list(request):
 @staff_member_required
 def admin_dashboard(request):
     matplotlib.use('Agg')
-    status_filter = request.GET.get('status')
+
+    current_year = datetime.now().year
+    years = range(2020, current_year + 5)
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    
     orders = Order.objects.all()
 
-    if status_filter:
-        orders = orders.filter(status=status_filter)
+    if year:
+        year = int(year)
+        orders = orders.filter(created_at__year=year)
 
-        total_orders = Order.objects.count()
-        pending_orders = Order.objects.filter(status='pending').count()
-        shipped_orders = Order.objects.filter(status='shipped').count()
-        delivered_orders = Order.objects.filter(status='delivered').count()
+        if month:
+            month = int(month)
+            orders = orders.filter(created_at__month=month)
 
-        total_products = Product.objects.count()
-        out_of_stock_products = Product.objects.filter(stock=0).count()
-
-        orders = Order.objects.all()
+        total_orders = orders.count()
         total_sales = {}
-        
+
         for order in orders:
-            month = order.created_at.month  
-            total_sales[month] = total_sales.get(month, 0) + order.grand_total
+            order_month = order.created_at.month
+            total_sales[order_month] = total_sales.get(order_month, 0) + order.grand_total
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(total_sales.keys(), total_sales.values(), marker='o')
-        plt.title('Total Sales / Month')
-        plt.xlabel('Months')
-        plt.ylabel('Total Sales')
-        plt.xticks(list(total_sales.keys())) 
-        plt.grid()
+        if not month:
+            for order in orders:
+                order_month = order.created_at.month
+                total_sales[order_month] = total_sales.get(order_month, 0) + order.grand_total
 
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        image_png = buffer.getvalue()
-        buffer.close()
-        graphic = base64.b64encode(image_png)
-        graphic = graphic.decode('utf-8') 
+            if total_sales:
+                plt.figure(figsize=(10, 5))
+                plt.bar(list(total_sales.keys()), list(total_sales.values()), color='blue')
+                plt.title(f'Total Sales for Year: {year}')
+                plt.xlabel('Months')
+                plt.ylabel('Total Sales')
+                plt.xticks(list(total_sales.keys())) 
+                plt.grid()
+
+                buffer = io.BytesIO()
+                plt.savefig(buffer, format='png')
+                buffer.seek(0)
+                image_png = buffer.getvalue()
+                buffer.close()
+                graphic = base64.b64encode(image_png).decode('utf-8')
+            else:
+                graphic = None
+        else:
+            graphic = None
 
         context = {
             'total_orders': total_orders,
-            'pending_orders': pending_orders,
-            'shipped_orders': shipped_orders,
-            'delivered_orders': delivered_orders,
-            'total_products': total_products,
-            'out_of_stock_products': out_of_stock_products,
             'orders': orders,
-            'status_filter': status_filter,
+            'month': month,
+            'year': year,
             'graphic': graphic,
+            'years': years,
         }
-        
-    return render(request, 'store/admin_dashboard.html', context)
+        return render(request, 'store/admin_dashboard.html', context)
+    
+    else:
+        return render(request, 'store/admin_dashboard.html', {'orders': orders, 'years': years})
+
+@staff_member_required
+def download_report(request):
+    matplotlib.use('Agg')
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    
+    orders = Order.objects.all()
+    if month and year:
+        month = int(month)
+        year = int(year)
+        orders = orders.filter(created_at__year=year, created_at__month=month)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sales Report"
+
+    ws.append(['ID', 'Total Price', 'Username', 'Ship Address', 'Status'])
+
+    for order in orders:
+        ws.append([order.id, order.total_price, order.user.username, order.address, order.status])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    filename = f"sales_report_{year}_{month}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    wb.save(response)
+    return response
+
+def export_sales_report(request, report_type):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Sales Report'
+
+    sheet.append(['ID', 'Total Price', 'Username', 'Ship Address', 'Status'])
+
+    year = request.GET.get('year', datetime.now().year)
+    month = request.GET.get('month')
+
+    if report_type == 'annual':
+        orders = Order.objects.filter(created_at__year=year)
+    elif report_type == 'monthly' and month:
+        orders = Order.objects.filter(created_at__year=year, created_at__month=month)
+    else:
+        orders = Order.objects.filter(created_at__year=year)
+
+    for order in orders:
+        sheet.append([
+            order.id,
+            order.total_price,
+            order.user.username,
+            order.address,
+            order.status
+        ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    if report_type == 'annual':
+        response['Content-Disposition'] = f'attachment; filename=annual_sales_report_{year}.xlsx'
+    else:
+        response['Content-Disposition'] = f'attachment; filename=monthly_sales_report_{year}_{month}.xlsx'
+
+    workbook.save(response)
+
+    return response
 
