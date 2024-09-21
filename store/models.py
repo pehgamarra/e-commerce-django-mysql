@@ -52,10 +52,11 @@ class Order(models.Model):
 #reviews
 
 class Review(models.Model):
-    product = models.ForeignKey('store.Product', on_delete=models.CASCADE, related_name='reviews') 
+    product = models.ForeignKey('store.Product', on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.PositiveIntegerField() 
+    rating = models.PositiveIntegerField()
     comment = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='reviews/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -14,7 +14,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse
 from django.db.models import Avg
 from .forms import ShippingAddressForm, ReviewForm
-from .models import Category, Product, Order
+from .models import Category, Product, Order, Review
 
 
 def home_view(request):
@@ -58,17 +58,26 @@ def product_list(request):
     }
     return render(request, 'store/product_list.html', context)
 
-
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    reviews = product.reviews.all()
-    average_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+    reviews = Review.objects.filter(product=product)
 
-    if average_rating is None:
+    all_reviews = product.reviews.all()
+    if all_reviews.exists():
+        average_rating = all_reviews.aggregate(Avg('rating'))['rating__avg']
+    else:
         average_rating = 0
 
+    stars = range(1, 6)
+
+    filter_stars = request.GET.get('stars')
+    if filter_stars:
+        reviews = all_reviews.filter(rating=filter_stars)
+    else:
+        reviews = all_reviews
+
     if request.method == 'POST':
-        form = ReviewForm(request.POST)
+        form = ReviewForm(request.POST, request.FILES)
         if form.is_valid():
             review = form.save(commit=False)
             review.product = product
@@ -77,15 +86,16 @@ def product_detail(request, product_id):
             return redirect('product_detail', product_id=product.id)
     else:
         form = ReviewForm()
-
-    context = {
+    
+    return render(request, 'store/product_detail.html', {
         'product': product,
-        'form': form,
         'reviews': reviews,
+        'stars': stars,
+        'form': form,
         'average_rating': round(average_rating, 1),
-    }
-    return render(request, 'store/product_detail.html', context)
-
+        'total_reviews': all_reviews.count(),
+        'filter_stars': filter_stars,
+    })
 
 #Cart view
 def add_to_cart(request, product_id):

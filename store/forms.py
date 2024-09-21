@@ -21,7 +21,7 @@ class PaymentForm(forms.Form):
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
-        fields = ['rating', 'comment']
+        fields = ['rating', 'comment', 'image']
         widgets = {
             'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
             'comment': forms.Textarea(attrs={'rows': 4}),
