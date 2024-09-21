@@ -1,4 +1,6 @@
 from django import forms
+from .models import Review
+
 
 class ShippingAddressForm(forms.Form):
     first_name = forms.CharField(label='First Name', max_length=50)
@@ -15,3 +17,12 @@ class PaymentForm(forms.Form):
     card_number = forms.CharField(label='Card Number', max_length=16)
     card_expiry = forms.CharField(label='Expiry Date (MM/YY)', max_length=5)
     card_cvc = forms.CharField(label='CVC', max_length=3)
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
+            'comment': forms.Textarea(attrs={'rows': 4}),
+        }

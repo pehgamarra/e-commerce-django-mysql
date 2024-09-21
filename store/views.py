@@ -5,15 +5,15 @@ import openpyxl
 import matplotlib.pyplot as plt
 import io
 import base64
-import calendar
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from .forms import ShippingAddressForm
+from django.contrib.auth.forms import UserCreationForm
+from django.http import HttpResponse
+from django.db.models import Avg
+from .forms import ShippingAddressForm, ReviewForm
 from .models import Category, Product, Order
 
 
@@ -37,7 +37,6 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
-
 #PRODUCTS
 
 def product_list(request):
@@ -60,11 +59,30 @@ def product_list(request):
     return render(request, 'store/product_list.html', context)
 
 
-def product_detail(request, id):
-    product = get_object_or_404(Product, id=id)
+def product_detail(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    reviews = product.reviews.all()
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+
+    if average_rating is None:
+        average_rating = 0
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            return redirect('product_detail', product_id=product.id)
+    else:
+        form = ReviewForm()
+
     context = {
         'product': product,
-        'user_is_authenticated': request.user.is_authenticated,
+        'form': form,
+        'reviews': reviews,
+        'average_rating': round(average_rating, 1),
     }
     return render(request, 'store/product_detail.html', context)
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, Cart, CartItem
+from .models import Category, Product, Order, Cart, CartItem, Review
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -40,3 +40,5 @@ def marcar_como_enviado(modeladmin, request, queryset):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'total_price', 'status', 'user',)
     actions = [marcar_como_enviado]
+
+admin.site.register(Review)
