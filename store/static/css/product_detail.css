@@ -53,12 +53,6 @@
     margin-top: 2rem;
 }
 
-
-.review-card {
-    width: 40%;
-    margin: left; 
-}
-
 .review-image {
     max-width: 150px;
     max-height: 150px;
@@ -88,7 +82,6 @@
     margin: left;
 }
 
-
 .review-card-container {
     width: 40%;
     margin: 0 auto; 
@@ -99,7 +92,10 @@
     border: 1px solid #ced4da; 
     margin-bottom: 1rem;
     padding: 1rem; 
+    width: 40%;
+    margin: left; 
 }
+
 @media (max-width: 768px) {
     .review-card-container {
         width: 100%; 
