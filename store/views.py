@@ -7,6 +7,7 @@ import io
 import base64
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -27,7 +28,10 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            messages.success(request, 'Registration successful! You are now logged in.')
             return redirect('home')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = UserCreationForm()
     return render(request, 'store/register.html', {'form': form})

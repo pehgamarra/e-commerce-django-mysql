@@ -8,5 +8,11 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Register</button>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
   </form>
 {% endblock %}
