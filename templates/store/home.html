@@ -1,8 +1,14 @@
 {% extends 'store/base.html' %}
+{% load static %}
 
 {% block title %}Home - My E-commerce Site{% endblock %}
 
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
 {% block content %}
-    <h2>Welcome to Our Online Store</h2>
-    <p>Check out our latest products and deals!</p>
+
+<div class="image-container">
+    <img src="{% static 'images/banner.png' %}" alt="Banner Image">
+</div>
+
 {% endblock %}
