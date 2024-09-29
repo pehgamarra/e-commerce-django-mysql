@@ -1,11 +1,9 @@
-body, html {
+body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     color: #333;
     padding-bottom: 60px; 
-    width: 100%;
-    height: 100%;
 }
 
 header {
@@ -19,17 +17,17 @@ header {
 nav {
     background-color: #007bff;
     color: #fff;
+    display: block;
     padding: 10px 0;
     border-bottom: 3px solid #0056b3;
-    text-align: center;
 }
 
 nav ul {
     list-style: none;
-    margin: 0;
-    padding: 0;
     display: flex;
     justify-content: center;
+    margin: 0;
+    padding: 0;
 }
 
 nav ul li {
@@ -37,15 +35,19 @@ nav ul li {
 }
 
 nav ul li a {
-    color: white;
     text-decoration: none;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
     padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 nav ul li a:hover,
 nav ul li a:focus {
     background-color: #0056b3;
-    border-radius: 5px;
+    transform: scale(1.05);
 }
 
 nav ul li a.active {
@@ -59,11 +61,8 @@ footer {
     color: #fff;
     padding: 20px;
     text-align: center;
-    position: relative;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
     margin-top: 20px;
-    bottom: 0;
-    width: 100%;
 }
 
 footer p {
@@ -71,25 +70,11 @@ footer p {
     font-size: 14px;
 }
 
-/* Home */
-.image-container {
+.banner img {
     width: 100%;
-    height: calc(100vh - 140px); 
-    overflow: hidden;
-    position: relative;
-    margin: 0;
-    padding: 0;
+    height: auto; 
+    object-fit: cover;
 }
-
-.image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; 
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
 
 .product-list {
     display: flex;
@@ -177,13 +162,6 @@ footer p {
 .view-details:hover {
     background-color: #2980b9;
     transform: translateY(-2px);
-}
-
-@media (max-width: 768px) {
-    .product-item {
-        width: 100%;
-        max-width: 300px;
-    }
 }
 
 .search-form {
@@ -348,4 +326,45 @@ footer p {
 
 #order-list tr:hover {
     background-color: #f1f1f1;
+}
+
+
+/* medias */
+
+@media (max-width: 768px) {
+    .product-list {
+        flex-direction: column;
+        padding: 10px; 
+    }
+
+    .product-item {
+        width: 100%; 
+        margin-bottom: 20px; 
+    }
+
+    footer {
+        padding: 15px;
+    }
+    .navbar-nav {
+        flex-direction: column;
+    }
+
+    nav ul {
+        flex-direction: column; 
+        padding: 10px;
+    }
+
+    nav ul li {
+        margin: 5px 0;
+    }
+
+    nav ul li a {
+        font-size: 16px;
+        padding: 8px 10px;
+    }
+
+    .add-to-cart-btn {
+        padding: 8px 15px;
+        font-size: 14px; 
+    }
 }

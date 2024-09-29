@@ -3,12 +3,12 @@
 
 {% block title %}Home - My E-commerce Site{% endblock %}
 
-<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
 
 {% block content %}
-
-<div class="image-container">
-    <img src="{% static 'images/banner.png' %}" alt="Banner Image">
+<div>
+    <div class="banner">
+        <img src="{% static 'images/banner.png' %}" class="d-block w-100" alt="Banner 1">
+    </div>
 </div>
-
 {% endblock %}
