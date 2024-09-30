@@ -6,7 +6,6 @@
 <div id="order-list">
     <h1>Orders</h1>
 
-    
     <h2>Sales Report</h2>
 
     <form method="get" action="{% url 'admin_dashboard' %}">
@@ -29,6 +28,7 @@
         </div>
         <button type="submit" class="btn btn-primary">Generate Report</button>
     </form>
+
     {% if not month and graphic %}
         <h2>Sales Report</h2>
         <img src="data:image/png;base64,{{ graphic }}" alt="Sales Report" />
@@ -38,7 +38,6 @@
     {% else %}
         </br><a href="{% url 'download_report' %}?year={{ year }}" class="btn btn-success">Download Annual Report as XLSX</a>
     {% endif %}
-
 
     <table>
         <tr>
@@ -53,16 +52,33 @@
         <tr>
             <td>{{ order.id }}</td>
             <td>{{ order.total_price }}</td>
-            <td>{{ order.user }}</td>            
+            <td>{{ order.user }}</td>
             <td>{{ order.address }}</td>
             <td>{{ order.created_at }}</td>
             <td>{{ order.get_status_display }}</td>
         </tr>
         {% empty %}
             <tr>
-                <td colspan="3">No orders found.</td>
+                <td colspan="6">No orders found.</td>
             </tr>
         {% endfor %}
     </table>
-</div>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if orders.has_previous %}
+                <a href="?page=1{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ orders.previous_page_number }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ orders.number }} of {{ orders.paginator.num_pages }}.
+            </span>
+    
+            {% if orders.has_next %}
+                <a href="?page={{ orders.next_page_number }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">next</a>
+                <a href="?page={{ orders.paginator.num_pages }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 {% endblock %}

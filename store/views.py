@@ -5,6 +5,7 @@ import openpyxl
 import matplotlib.pyplot as plt
 import io
 import base64
+
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
 from django.contrib import messages
@@ -12,8 +13,10 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.forms import UserCreationForm
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.db.models import Avg
+
 from .forms import ShippingAddressForm, ReviewForm
 from .models import Category, Product, Order, Review
 
@@ -263,107 +266,124 @@ def admin_dashboard(request):
     years = range(2020, current_year + 5)
     month = request.GET.get('month')
     year = request.GET.get('year')
-    
+
+    # Filter orders based on the selected year and month
     orders = Order.objects.all()
 
+    # Apply year filter if present
     if year:
         year = int(year)
         orders = orders.filter(created_at__year=year)
 
-        if month:
-            month = int(month)
-            orders = orders.filter(created_at__month=month)
+    # Apply month filter if present
+    if month:
+        month = int(month)
+        orders = orders.filter(created_at__month=month)
 
-        total_orders = orders.count()
-        total_sales = {}
+    # Pagination
+    paginator = Paginator(orders, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-        for order in orders:
-            order_month = order.created_at.month
-            total_sales[order_month] = total_sales.get(order_month, 0) + order.grand_total
+    total_orders = orders.count()
+    total_sales = {}
 
-        if not month:
-            for order in orders:
-                order_month = order.created_at.month
-                total_sales[order_month] = total_sales.get(order_month, 0) + order.grand_total
+    # Calculate total sales per month
+    for order in orders:
+        order_month = order.created_at.month
+        total_sales[order_month] = total_sales.get(order_month, 0) + order.grand_total
 
-            if total_sales:
-                plt.figure(figsize=(10, 5))
-                plt.bar(list(total_sales.keys()), list(total_sales.values()), color='blue')
-                plt.title(f'Total Sales for Year: {year}')
-                plt.xlabel('Months')
-                plt.ylabel('Total Sales')
-                plt.xticks(list(total_sales.keys())) 
-                plt.grid()
+    # Generate graphic if necessary
+    graphic = None
+    if not month and year:  # Generate graphic only if a year is selected without a month
+        if total_sales:
+            plt.figure(figsize=(10, 5))
+            plt.bar(list(total_sales.keys()), list(total_sales.values()), color='blue')
+            plt.title(f'Total Sales for Year: {year}')
+            plt.xlabel('Months')
+            plt.ylabel('Total Sales')
+            plt.xticks(list(total_sales.keys())) 
+            plt.grid()
 
-                buffer = io.BytesIO()
-                plt.savefig(buffer, format='png')
-                buffer.seek(0)
-                image_png = buffer.getvalue()
-                buffer.close()
-                graphic = base64.b64encode(image_png).decode('utf-8')
-            else:
-                graphic = None
-        else:
-            graphic = None
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            buffer.seek(0)
+            image_png = buffer.getvalue()
+            buffer.close()
+            graphic = base64.b64encode(image_png).decode('utf-8')
 
-        context = {
-            'total_orders': total_orders,
-            'orders': orders,
-            'month': month,
-            'year': year,
-            'graphic': graphic,
-            'years': years,
-        }
-        return render(request, 'store/admin_dashboard.html', context)
-    
-    else:
-        return render(request, 'store/admin_dashboard.html', {'orders': orders, 'years': years})
+    # Pass context to the template
+    context = {
+        'total_orders': total_orders,
+        'orders': page_obj,
+        'month': month,
+        'year': year,
+        'graphic': graphic,
+        'years': years,
+    }
+    return render(request, 'store/admin_dashboard.html', context)
+
+
 
 @staff_member_required
 def download_report(request):
+    # Use Agg backend for matplotlib to avoid display issues
     matplotlib.use('Agg')
-    month = request.GET.get('month')
-    year = request.GET.get('year')
+    month = request.GET.get('month')  # Get the selected month from the request
+    year = request.GET.get('year')  # Get the selected year from the request
     
+    # Retrieve all orders initially
     orders = Order.objects.all()
+    # Filter orders by year and month if provided
     if month and year:
-        month = int(month)
-        year = int(year)
+        month = int(month)  # Convert month to integer
+        year = int(year)  # Convert year to integer
         orders = orders.filter(created_at__year=year, created_at__month=month)
     
+    # Create a new Excel workbook and select the active worksheet
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Sales Report"
+    ws.title = "Sales Report"  # Set the title of the worksheet
 
+    # Append header row to the worksheet
     ws.append(['ID', 'Total Price', 'Username', 'Ship Address', 'Status'])
 
+    # Add each order's details to the worksheet
     for order in orders:
         ws.append([order.id, order.total_price, order.user.username, order.address, order.status])
 
+    # Create an HTTP response with Excel file content type
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    filename = f"sales_report_{year}_{month}.xlsx"
-    response['Content-Disposition'] = f'attachment; filename={filename}'
+    filename = f"sales_report_{year}_{month}.xlsx"  # Filename for the Excel file
+    response['Content-Disposition'] = f'attachment; filename={filename}'  # Specify attachment filename
 
-    wb.save(response)
-    return response
+    wb.save(response)  # Save the workbook to the response
+    return response  # Return the response to the client
+
+
 
 def export_sales_report(request, report_type):
+    # Create a new Excel workbook
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    sheet.title = 'Sales Report'
+    sheet.title = 'Sales Report'  # Set the title of the worksheet
 
+    # Append header row to the worksheet
     sheet.append(['ID', 'Total Price', 'Username', 'Ship Address', 'Status'])
 
+    # Get year and month from the request, defaulting year to current year
     year = request.GET.get('year', datetime.now().year)
     month = request.GET.get('month')
 
+    # Filter orders based on the report type (annual or monthly)
     if report_type == 'annual':
         orders = Order.objects.filter(created_at__year=year)
     elif report_type == 'monthly' and month:
         orders = Order.objects.filter(created_at__year=year, created_at__month=month)
     else:
-        orders = Order.objects.filter(created_at__year=year)
+        orders = Order.objects.filter(created_at__year=year)  # Default to yearly if no month
 
+    # Add each order's details to the worksheet
     for order in orders:
         sheet.append([
             order.id,
@@ -373,13 +393,15 @@ def export_sales_report(request, report_type):
             order.status
         ])
 
+    # Create an HTTP response with Excel file content type
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    # Set the filename based on report type
     if report_type == 'annual':
         response['Content-Disposition'] = f'attachment; filename=annual_sales_report_{year}.xlsx'
     else:
         response['Content-Disposition'] = f'attachment; filename=monthly_sales_report_{year}_{month}.xlsx'
 
-    workbook.save(response)
+    workbook.save(response)  # Save the workbook to the response
+    return response  # Return the response to the client
 
-    return response
 

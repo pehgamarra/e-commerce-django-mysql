@@ -1,5 +1,7 @@
 from django import forms
 from .models import Review
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 
 
 class ShippingAddressForm(forms.Form):
@@ -26,3 +28,21 @@ class ReviewForm(forms.ModelForm):
             'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
             'comment': forms.Textarea(attrs={'rows': 4}),
         }
+
+class CustomUserCreationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ('username', 'password1', 'password2')
+
+    def __init__(self, *args, **kwargs):
+        super(CustomUserCreationForm, self).__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords do not match.")
+        return password2

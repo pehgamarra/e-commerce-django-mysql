@@ -3,16 +3,40 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-  <h2>Register</h2>
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Register</button>
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-info">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Register</h2>
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Username</label>
+                    {{ form.username }}
+                    {% for error in form.username.errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
 
-  </form>
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label">Password</label>
+                    {{ form.password1 }}
+                    {% for error in form.password1.errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_password2" class="form-label">Confirm Password</label>
+                    {{ form.password2 }}
+                    {% for error in form.password2.errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

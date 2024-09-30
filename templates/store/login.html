@@ -3,10 +3,37 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-  <h2>Login</h2>
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-  </form>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Login</h2>
+    <div class="card" style="width: 40%; margin: auto;">
+        <div class="card-body">
+            <form method="POST" class="form-login">
+                {% csrf_token %}
+                
+                <div class="mb-3 input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-person-fill"></i>
+                    </span>
+                    <input type="text" name="username" id="id_username" class="form-control" placeholder="Username" required>
+                </div>
+
+                <div class="mb-3 input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-lock-fill"></i>
+                    </span>
+                    <input type="password" name="password" id="id_password" class="form-control" placeholder="Password" required>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

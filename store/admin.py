@@ -13,10 +13,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'total_price', 'shipping_cost', 'grand_total', 'status')
+    list_display = ('id', 'user', 'user_id', 'total_price', 'shipping_cost', 'grand_total', 'status')
     list_filter = ('status',) 
     search_fields = ('id', 'user__username')
-    
     actions = ['mark_as_shipped']
 
     def mark_as_shipped(self, request, queryset):
@@ -24,21 +23,16 @@ class OrderAdmin(admin.ModelAdmin):
         self.message_user(request, "Selected orders have been marked as shipped.")
     mark_as_shipped.short_description = "Mark selected orders as shipped"
 
+    def user_id(self, obj):
+        return obj.user.id
+    user_id.short_description = 'User ID'
 
-@admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
-    list_display = ('user', 'created_at')
-
-@admin.register(CartItem)
-class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('cart', 'product', 'quantity')
-
-@admin.action(description="Marcar pedidos como enviados")
-def marcar_como_enviado(modeladmin, request, queryset):
+@admin.action(description="Set as shipped")
+def setShipped(modeladmin, request, queryset):
     queryset.update(status='shipped')
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'total_price', 'status', 'user',)
-    actions = [marcar_como_enviado]
+    actions = [setShipped]
 
 admin.site.register(Review)
