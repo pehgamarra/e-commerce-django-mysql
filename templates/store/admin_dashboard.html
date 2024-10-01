@@ -5,7 +5,7 @@
 
 <div id="order-list">
     <h1>Orders</h1>
-
+    <hr>
     <h2>Sales Report</h2>
 
     <form method="get" action="{% url 'admin_dashboard' %}">
@@ -14,7 +14,7 @@
             <select name="month" id="month" class="form-control">
                 <option value="">All Months</option>
                 {% for i in 12|range %}
-                    <option value="{{ i }}">{{ i }}</option>
+                    <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ i }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -22,15 +22,29 @@
             <label for="year">Select Year:</label>
             <select name="year" id="year" class="form-control">
                 {% for y in years %}
-                    <option value="{{ y }}">{{ y }}</option>
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Generate Report</button>
     </form>
-
+    <hr>
+    <h3>Filtter by Status</h2>
+    <div class="form-group">
+        <form method="get" action="{% url 'admin_dashboard' %}" style="display:inline;">
+            <select name="status" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+                <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Shipped</option>
+            </select>
+            <input type="hidden" name="month" value="{{ month }}">
+            <input type="hidden" name="year" value="{{ year }}">
+        </form>
+    </div>
+    <hr>
     {% if not month and graphic %}
-        <h2>Sales Report</h2>
+        <h3>Graphic Annual Report</h2>
         <img src="data:image/png;base64,{{ graphic }}" alt="Sales Report" />
     {% endif %}
     {% if month %}
@@ -41,12 +55,47 @@
 
     <table>
         <tr>
-            <th>ID</th>
-            <th>Total Price</th>
-            <th>Username</th>
-            <th>Ship address</th>
-            <th>Purchase date</th>
-            <th>Status</th>
+            <th>
+                <a href="?order_by=id&sort_order={{ sort_order }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">ID 
+                    {% if order_by == 'id' %} 
+                    <span>
+                        &#9660;
+                    </span>
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?order_by=total_price&sort_order={{ sort_order }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">
+                    Total Price {% if order_by == 'total_price' %} 
+                    <span>
+                        &#9660;
+                    </span>
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?order_by=user&sort_order={{ sort_order }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">Username 
+                    {% if order_by == 'user' %} 
+                    <span>&#9660;</span>{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?order_by=address&sort_order={{ sort_order }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">Ship address 
+                    {% if order_by == 'address' %} 
+                    <span>&#9660;</span>
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?order_by=created_at&sort_order={{ sort_order }}{% if month %}&month={{ month }}{% endif %}{% if year %}&year={{ year }}{% endif %}">Purchase date 
+                    {% if order_by == 'created_at' %} 
+                    <span>&#9660;</span>
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                Status 
+            </th>
         </tr>
         {% for order in orders %}
         <tr>
@@ -55,15 +104,23 @@
             <td>{{ order.user }}</td>
             <td>{{ order.address }}</td>
             <td>{{ order.created_at }}</td>
-            <td>{{ order.get_status_display }}</td>
+            <td>
+                <form method="post" action="{% url 'update_order_status' order.id %}">
+                    {% csrf_token %}
+                    <select name="status" onchange="this.form.submit()">
+                        {% for key, value in order.STATUS_CHOICES %}
+                            <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </td>
         </tr>
         {% empty %}
             <tr>
-                <td colspan="6">No orders found.</td>
+                <td colspan="7">No orders found.</td>
             </tr>
         {% endfor %}
     </table>
-
     <div class="pagination">
         <span class="step-links">
             {% if orders.has_previous %}
@@ -81,4 +138,5 @@
             {% endif %}
         </span>
     </div>
+</div>
 {% endblock %}

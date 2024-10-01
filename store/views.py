@@ -11,11 +11,12 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.urls import reverse
 
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.db.models import Avg
 
 
@@ -341,27 +342,51 @@ def admin_order_list(request):
     orders = Order.objects.all()
     return render(request, 'admin_custom/orders.html', {'orders': orders})
 
+
 @staff_member_required
 def admin_dashboard(request):
     matplotlib.use('Agg')
 
     current_year = datetime.now().year
     years = range(2020, current_year + 5)
+
+    #Requisition parameters
     month = request.GET.get('month')
     year = request.GET.get('year')
-
-    # Filter orders based on the selected year and month
+    status_filter = request.GET.get('status', '')
     orders = Order.objects.all()
 
-    # Apply year filter if present
-    if year:
-        year = int(year)
-        orders = orders.filter(created_at__year=year)
+      # Apply status filter if present
+    if year and year != 'None':
+        try:
+            year = int(year)
+            orders = orders.filter(created_at__year=year)
+        except ValueError:
+            year = None
 
-    # Apply month filter if present
-    if month:
-        month = int(month)
-        orders = orders.filter(created_at__month=month)
+    if month and month != 'None':
+        try:
+            month = int(month)
+            orders = orders.filter(created_at__month=month)
+        except ValueError:
+            month = None
+
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    # ordernation filter
+    order_by = request.GET.get('order_by', 'id')
+    sort_order = request.GET.get('sort_order', 'asc') 
+
+    if sort_order == 'desc':
+        order_by = f'-{order_by}'
+
+    valid_order_fields = ['id', 'total_price', 'user', 'address', 'created_at', 'status']
+    if order_by.lstrip('-') in valid_order_fields:
+        orders = orders.order_by(order_by)
+    else:
+        orders = orders.order_by('id') 
+        
 
     # Pagination
     paginator = Paginator(orders, 15)
@@ -370,6 +395,7 @@ def admin_dashboard(request):
 
     total_orders = orders.count()
     total_sales = {}
+
 
     # Calculate total sales per month
     for order in orders:
@@ -403,9 +429,26 @@ def admin_dashboard(request):
         'year': year,
         'graphic': graphic,
         'years': years,
+        'order_by': order_by,
+        'sort_order': 'desc' if sort_order == 'asc' else 'asc',
+        'status_filter': status_filter,
     }
     return render(request, 'store/admin_dashboard.html', context)
 
+@staff_member_required
+def update_order_status(request, order_id):
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        order = get_object_or_404(Order, id=order_id)
+        order.status = new_status
+        order.save()
+        messages.success(request, 'Order status updated successfully.')
+
+    # Capture the original query parameters
+    referrer = request.META.get('HTTP_REFERER', '')
+    
+    # Redirect back to the same page with the original query parameters
+    return HttpResponseRedirect(referrer)
 
 
 @staff_member_required
