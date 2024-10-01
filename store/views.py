@@ -8,16 +8,18 @@ import base64
 
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
-from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.forms import UserCreationForm
+
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.db.models import Avg
 
-from .forms import ShippingAddressForm, ReviewForm
+
+from .forms import ShippingAddressForm, ReviewForm, CustomAuthenticationForm
 from .models import Category, Product, Order, Review
 
 
@@ -39,7 +41,30 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'store/register.html', {'form': form})
 
-@login_required
+
+def login_view(request):
+    authentication_form = CustomAuthenticationForm
+    if request.method == 'POST':
+        form = authentication_form(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Login realizado com sucesso!')
+                return redirect('home')
+            else:
+                messages.error(request, 'Nome de usuário ou senha incorretos.')
+        else:
+            messages.error(request, 'Por favor, corrija os erros abaixo.')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'store/login.html', {'form': form})
+
+
+@login_required(login_url='login')
 def logout_view(request):
     logout(request)
     return redirect('home')
@@ -165,7 +190,7 @@ def calculate_shipping(total_amount):
     return total_amount * shipping_rate
 
 
-@login_required
+@login_required(login_url='login')
 def checkout(request):
     cart = request.session.get('cart', {})
     
@@ -361,7 +386,7 @@ def download_report(request):
     return response  # Return the response to the client
 
 
-
+@staff_member_required
 def export_sales_report(request, report_type):
     # Create a new Excel workbook
     workbook = openpyxl.Workbook()

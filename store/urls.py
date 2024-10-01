@@ -6,7 +6,7 @@ urlpatterns = [
     path('', views.home_view, name='home'),
     path('products/', views.product_list, name='product_list'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
-    path('login/', auth_views.LoginView.as_view(template_name='store/login.html'), name='login'),
+    path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
     path('cart/', views.cart_detail, name='cart_detail'),

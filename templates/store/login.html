@@ -10,18 +10,26 @@
             <form method="POST" class="form-login">
                 {% csrf_token %}
                 
-                <div class="mb-3 input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-person-fill"></i>
-                    </span>
-                    <input type="text" name="username" id="id_username" class="form-control" placeholder="Username" required>
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                        <input type="text" name="username" id="id_username" class="form-control" placeholder="Username" required>
+                    </div>
+                    {{ form.username.errors }}
                 </div>
 
-                <div class="mb-3 input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-lock-fill"></i>
-                    </span>
-                    <input type="password" name="password" id="id_password" class="form-control" placeholder="Password" required>
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-lock-fill"></i>
+                        </span>
+                        <input type="password" name="password" id="id_password" class="form-control" placeholder="Password" required>
+                    </div>
+                    {{ form.password.errors }}
                 </div>
                 
                 <div class="mb-3">
