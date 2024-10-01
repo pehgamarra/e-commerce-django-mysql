@@ -12,7 +12,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import HttpResponse
@@ -20,7 +20,7 @@ from django.db.models import Avg
 
 
 from .forms import ShippingAddressForm, ReviewForm, CustomAuthenticationForm, CustomUserCreationForm
-from .models import Category, Product, Order, Review
+from .models import Category, Product, Order, Review, OrderItem, CartItem
 
 
 def home_view(request):
@@ -129,17 +129,22 @@ def product_detail(request, product_id):
         'filter_stars': filter_stars,
     })
 
-#Cart view
+# Add product to cart
 def add_to_cart(request, product_id):
-    cart = request.session.get('cart', {})
     product = get_object_or_404(Product, id=product_id)
     quantity = int(request.POST.get('quantity', 1))
 
+    # Check if the quantity is greater than available stock
+    if quantity > product.stock:
+        messages.error(request, "Not enough stock available")
+        return redirect('product_detail', product_id=product_id)
+
+    cart = request.session.get('cart', {})
     product_id_str = str(product_id)
 
     if product_id_str not in cart:
         cart[product_id_str] = {
-            'quantity': quantity, 
+            'quantity': quantity,
             'price': str(product.price),
         }
     else:
@@ -148,30 +153,28 @@ def add_to_cart(request, product_id):
     request.session['cart'] = cart
     return redirect('cart_detail')
 
-def remove_from_cart(request, product_id):
-    cart = request.session.get('cart', {})
-
-    if str(product_id) in cart:
-        del cart[product_id]
-
-    request.session['cart'] = cart
-    return redirect('cart_detail')
-
+# View cart details
 def cart_detail(request):
     cart = request.session.get('cart', {})
-    
+
     if not cart:
         return render(request, 'store/cart_detail.html', {'message': 'Your cart is empty.'})
 
     cart_items = []
     total = 0
-    
+
     for product_id, item in cart.items():
         product = get_object_or_404(Product, id=product_id)
-        total_price = float(item['price']) * item['quantity']
+
+        # Ensure quantity doesn't exceed stock
+        quantity = min(item['quantity'], product.stock)
+
+        # Calculate total price using the existing quantity
+        total_price = quantity * product.price 
+        
         cart_items.append({
             'product': product,
-            'quantity': item['quantity'],
+            'quantity': quantity,
             'total_price': round(total_price, 2)
         })
         total += total_price
@@ -184,70 +187,6 @@ def cart_detail(request):
     return render(request, 'store/cart_detail.html', context)
 
 
-#checkout & shipping
-def calculate_shipping(total_amount):
-    shipping_rate = 0.05
-    return total_amount * shipping_rate
-
-
-@login_required(login_url='login')
-def checkout(request):
-    cart = request.session.get('cart', {})
-    
-    if not cart:
-        return render(request, 'store/checkout.html', {'message': 'Your cart is empty.'})
-
-    if request.method == 'POST':
-        form = ShippingAddressForm(request.POST)
-        card_number = request.POST.get('card_number')
-        expiry_date = request.POST.get('expiry_date')
-        cvv = request.POST.get('cvv')
-        
-        if form.is_valid():
-            address = form.cleaned_data
-
-            total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
-            shipping_cost = calculate_shipping(total_price)
-            grand_total = round(total_price + shipping_cost, 2)
-
-            order = Order.objects.create(
-                user=request.user,
-                total_price=round(total_price, 2),
-                shipping_cost=shipping_cost,
-                grand_total=grand_total,
-                address=f"{address['address_line1']}, {address.get('address_line2', '')}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}",
-                
-            )
-
-            request.session['cart'] = {}
-
-            return render(request, 'store/checkout_complete.html', {
-                'order': order,
-                'address': address,
-                'card_number': card_number,
-                'expiry_date': expiry_date,
-                'cvv': cvv
-            })
-    else:
-        form = ShippingAddressForm()
-    
-    total_price = sum(float(item['price']) * item['quantity'] for item in cart.values())
-    shipping_cost = round(calculate_shipping(total_price), 2)
-    grand_total = round(total_price + shipping_cost, 2)
-    
-    context = {
-        'cart': cart,
-        'total_price': round(total_price, 2),
-        'shipping_cost': shipping_cost,
-        'grand_total': grand_total,
-        'form': form
-    }
-    
-    return render(request, 'store/checkout.html', context)
-
-def checkout_complete(request):
-    return render(request, 'store/checkout_complete.html')
-
 #remove & edit cart:
 
 @require_POST
@@ -256,9 +195,16 @@ def remove_all_from_cart(request, product_id):
 
     if str(product_id) in cart:
         del cart[str(product_id)]
-
+    
     request.session['cart'] = cart
-    return redirect('cart_detail')
+
+    try:
+        cart_item = CartItem.objects.get(product_id=product_id, user=request.user)
+        cart_item.delete()
+        return redirect('cart_detail')
+    except CartItem.DoesNotExist:
+        return redirect('cart_detail')
+
 
 @require_POST
 def update_cart_item(request, product_id):
@@ -270,11 +216,123 @@ def update_cart_item(request, product_id):
             cart[str(product_id)]['quantity'] = quantity
         else:
             del cart[str(product_id)]
+        
+        request.session['cart'] = cart
     else:
-        return redirect('cart_detail')
+        cart_item = get_object_or_404(CartItem, id=product_id, user=request.user)
+        if quantity > 0:
+            cart_item.quantity = quantity
+            cart_item.save()
+        else:
+            cart_item.delete()  # Remove from database if quantity is zero
 
-    request.session['cart'] = cart
     return redirect('cart_detail')
+
+#checkout & shipping
+def calculate_shipping(total_amount):
+    shipping_rate = 0.05
+    return round(total_amount * shipping_rate, 2)
+
+
+# Checkout process
+@login_required(login_url='login')
+def checkout(request):
+    cart = request.session.get('cart', {})
+    
+    if not cart:
+        return render(request, 'store/checkout.html', {'message': 'Your cart is empty.'})
+
+    total_price = 0
+    shipping_cost = 0
+    grand_total = 0
+
+    if request.method == 'POST':
+        form = ShippingAddressForm(request.POST)
+        card_number = request.POST.get('card_number')
+        expiry_date = request.POST.get('expiry_date')
+        cvv = request.POST.get('cvv')
+        
+        if form.is_valid():
+            address = form.cleaned_data
+
+            # Calculate the total price for all products in the cart
+            order_items = []  # To store the order items
+            for product_id, item in cart.items():
+                product = get_object_or_404(Product, id=product_id)
+
+                # Check if stock is available before checkout
+                quantity = min(item['quantity'], product.stock)
+
+                item_price = float(item['price']) * quantity
+                total_price += item_price
+
+                # Prepare the order items data
+                order_items.append({
+                    'product': product,
+                    'quantity': quantity,
+                    'price': float(item['price'])
+                })
+
+                # Update stock after purchase
+                product.stock -= quantity
+                product.save()
+
+            shipping_cost = calculate_shipping(total_price)
+            grand_total = round(total_price + shipping_cost, 2)
+
+            # Create order record
+            order = Order.objects.create(
+                user=request.user,
+                total_price=round(total_price, 2),
+                shipping_cost=shipping_cost,
+                grand_total=grand_total,
+                address=f"{address['address_line1']}, {address.get('address_line2', '')}, {address['city']}, {address['state']}, {address['postal_code']}, {address['country']}",
+            )
+
+            # Create OrderItem records for each product in the cart
+            for item in order_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item['product'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                )
+
+            # Clear the cart after purchase
+            request.session['cart'] = {}
+
+            return render(request, 'store/checkout_complete.html', {
+                'order': order,
+                'address': address,
+                'card_number': card_number,
+                'expiry_date': expiry_date,
+                'cvv': cvv
+            })
+    else:
+        form = ShippingAddressForm()
+
+        # Calculate the total price for all products in the cart if it's a GET request
+        for product_id, item in cart.items():
+            product = get_object_or_404(Product, id=product_id)
+            quantity = min(item['quantity'], product.stock)
+            item_price = float(item['price']) * quantity
+            total_price += item_price
+
+        shipping_cost = calculate_shipping(total_price)
+        grand_total = round(total_price + shipping_cost, 2)
+
+    return render(request, 'store/checkout.html', {
+        'form': form,
+        'total_price': round(total_price, 2),
+        'shipping_cost': shipping_cost,
+        'grand_total': grand_total,
+    })
+
+
+
+def checkout_complete(request):
+    return render(request, 'store/checkout_complete.html')
+
 
 #staff methods
 
