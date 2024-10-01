@@ -4,9 +4,9 @@
 {% load extras %}
 
 <div id="order-list">
-    <h1>Orders</h1>
+    <h1> <i class="bi bi-list-ul"></i> Orders</h1>
     <hr>
-    <h2>Sales Report</h2>
+    <h2>Sales Report <i class="bi bi-calendar-check"></i></h2>
 
     <form method="get" action="{% url 'admin_dashboard' %}">
         <div class="form-group">
@@ -26,14 +26,14 @@
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Generate Report</button>
+        <button type="submit" class="btn btn-primary">Generate Report <i class="bi bi-search"></i></button>
     </form>
     <hr>
-    <h3>Filtter by Status</h2>
+    <h3><i class="bi bi-funnel-fill"></i>Filter by Status </h2>
     <div class="form-group">
         <form method="get" action="{% url 'admin_dashboard' %}" style="display:inline;">
             <select name="status" onchange="this.form.submit()">
-                <option value="">All Statuses</option>
+                <option value="">All Orders</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                 <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
                 <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Shipped</option>
@@ -48,9 +48,9 @@
         <img src="data:image/png;base64,{{ graphic }}" alt="Sales Report" />
     {% endif %}
     {% if month %}
-        </br><a href="{% url 'download_report' %}?month={{ month }}&year={{ year }}" class="btn btn-success">Download Monthly Report as XLSX</a>
+        </br><a href="{% url 'download_report' %}?month={{ month }}&year={{ year }}" class="btn btn-success">Download Monthly Report as XLSX <i class="bi bi-download"></i> </a>
     {% else %}
-        </br><a href="{% url 'download_report' %}?year={{ year }}" class="btn btn-success">Download Annual Report as XLSX</a>
+        </br><a href="{% url 'download_report' %}?year={{ year }}" class="btn btn-success">Download Annual Report as XLSX <i class="bi bi-download"></i> </a>
     {% endif %}
 
     <table>

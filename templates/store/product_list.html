@@ -3,8 +3,8 @@
 {% block title %}Products - E-commerce Site{% endblock %}
 
 {% block content %}
-    <h2 class="text-center">Smart-Phones</h2>
-    
+    <h2 class="text-center">All Products <i class="bi bi-phone"></i></h2>
+    <hr>
     <div class="search-filter-container mb-4 text-center">
         <form method="get" class="d-flex justify-content-center">
             <input type="text" name="q" placeholder="Search by name" value="{{ request.GET.q }}" class="form-control me-2" style="width: 300px;">
@@ -15,11 +15,11 @@
                         <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-primary">Search <i class="bi bi-search"></i></button>
             </div>
         </form>
     </div>
-
+<hr>
     <div class="product-list">
         {% for product in products %}
             <div class="product-item">

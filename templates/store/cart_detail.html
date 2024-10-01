@@ -4,8 +4,8 @@
 
 {% block content %}
     <div class="container mt-4">
-        <h2 class="mb-4">Your Cart</h2>
-
+        <h2 class="mb-4">Your Cart <i class="bi bi-cart"></i></h2>
+        <hr>
         <div class="cart-table-wrapper">
             <table class="table table-bordered table-striped">
                 <thead class="thead-dark">
@@ -48,7 +48,7 @@
                 </tbody>
             </table>
         </div>
-
+        <hr>
         <div class="d-flex justify-content-between mt-4">
             <p><strong>Total:</strong> ${{ cart_total }}</p>
                 {% if user.is_authenticated %}
