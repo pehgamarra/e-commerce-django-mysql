@@ -19,7 +19,7 @@ from django.http import HttpResponse
 from django.db.models import Avg
 
 
-from .forms import ShippingAddressForm, ReviewForm, CustomAuthenticationForm
+from .forms import ShippingAddressForm, ReviewForm, CustomAuthenticationForm, CustomUserCreationForm
 from .models import Category, Product, Order, Review
 
 
@@ -29,7 +29,7 @@ def home_view(request):
 #REGISTER / LOGOUT
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
@@ -38,7 +38,7 @@ def register(request):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, 'store/register.html', {'form': form})
 
 
