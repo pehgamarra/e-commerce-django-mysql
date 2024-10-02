@@ -75,7 +75,7 @@ footer p {
     height: auto; 
     object-fit: cover;
 }
-
+/* Products page*/
 .product-list {
     display: flex;
     flex-wrap: wrap;
@@ -334,8 +334,6 @@ footer p {
     align-items: center; 
 }
 
-
-
 .category-select {
     width: 50%; 
     max-width: 150px;
@@ -400,4 +398,5 @@ footer p {
         padding: 8px 15px;
         font-size: 14px; 
     }
+
 }

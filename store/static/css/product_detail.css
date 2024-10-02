@@ -70,11 +70,27 @@
     padding-left: 20px; 
 }
 
+.star-list a {
+    text-decoration: none;
+    color: #007bff; 
+}
+
 .star-list li:before {
     content: "★"; 
     color: gold;
     position: absolute; 
     left: 0; 
+}
+
+.Rating {
+    font-size: large;
+}
+
+.Rating::before {
+    content: "★"; 
+    color: gold;
+    position: inherit; 
+    right: 0; 
 }
 
 .review-form {

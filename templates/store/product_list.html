@@ -32,7 +32,9 @@
                     <p class="description">{{ product.description|slice:":100" }}{% if product.description|length > 100 %}...{% endif %}</p>
                     <form method="post" action="{% url 'add_to_cart' product.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                        <button type="submit" class="btn btn-success" {% if product.stock == 0 %} style="background-color: gray; border-color: gray;" disabled {% endif %}>
+                            Add to Cart <i class="bi bi-cart"></i>
+                        </button>
                     </form>
                     <a href="{% url 'product_detail' product.id %}" class="view-details">View Details</a>
                 </div>

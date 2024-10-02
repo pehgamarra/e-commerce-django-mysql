@@ -23,58 +23,31 @@
             <h3 class="product-price">${{ product.price }}</h3>
             <form method="post" action="{% url 'add_to_cart' product.id %}" class="mt-3">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-warning" {% if product.stock == 0 %} style="background-color: gray; border-color: gray;" disabled {% endif %}>
-                    Add to Cart
+                <button type="submit" class="btn btn-success" {% if product.stock == 0 %} style="background-color: gray; border-color: gray;" disabled {% endif %}>
+                    Add to Cart <i class="bi bi-cart"></i>
                 </button>
             </form>
             <p class="product-stock">
-                Stock: {{ product.stock }} item{{ product.stock|pluralize }}
+                Avaible : {{ product.stock }} item{{ product.stock|pluralize }}
             </p>
-            <hr>
-            <h4>
-                Average Rating: ({{ average_rating|floatformat:1 }})
-            </h4>            
+            <hr>          
         </div>
     </div>
     <hr>
-
-    <h5>Leave a Review</h5>
-        <form method="post" action="{% url 'product_detail' product.id %}" enctype="multipart/form-data" class="review-form">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="comment" class="form-label">Your Comment</label>
-                <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="rating" class="form-label">Your Rating</label>
-                <select class="form-select" id="rating" name="rating" required>
-                    <option value="">Choose...</option>
-                    {% for star in stars %}
-                        <option value="{{ star }}">{{ star }} Star</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="image" class="form-label">Upload an Image (optional)</label>
-                <input type="file" class="form-control" id="image" name="image">
-            </div>
-            <button type="submit" class="btn btn-warning">Submit Review</button>
-        </form> 
-        <hr>
-
-    <div class="filter-stars">
-        <h5>Filter Reviews:</h5>
-        <ul class="star-list">
-            <li><a href="?">All Reviews</a></li>
-            {% for star in stars %}
-                <li><a href="?stars={{ star }}">{{ star }} Star</a></li>
-            {% endfor %}
-        </ul>
-    </div>
-     
-    <hr>
-    <h5>Customer Reviews</h5>
+    <h4>Customer Reviews</h4> 
+    <h3 class="Rating"> Average Rating: ({{ average_rating|floatformat:1 }}) </h3>
     <div class="reviews-container">
+        
+        <div class="filter-stars">
+            <ul class="star-list d-flex">
+                Filter Rating :  
+                <li><a href="?">All</a></li>
+                {% for star in stars %}
+                    <li><a href="?stars={{ star }}">{{ star }} Star</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <br>
         {% for review in reviews %}
             <div class="card mb-4 review-card">
                 <div class="card-body">
@@ -101,7 +74,29 @@
             <p>No reviews yet for this product.</p>
         {% endfor %}
     </div>
-    
+    <hr>
+    <h5>Leave a Review</h5>
+        <form method="post" action="{% url 'product_detail' product.id %}" enctype="multipart/form-data" class="review-form">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="comment" class="form-label">Your Comment</label>
+                <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="rating" class="form-label">Your Rating</label>
+                <select class="form-select" id="rating" name="rating" required>
+                    <option value="">Choose...</option>
+                    {% for star in stars %}
+                        <option value="{{ star }}">{{ star }} Star</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">Upload an Image (optional)</label>
+                <input type="file" class="form-control" id="image" name="image">
+            </div>
+            <button type="submit" class="btn btn-warning">Submit Review</button>
+        </form> 
 </div>
 
 {% endblock %}
